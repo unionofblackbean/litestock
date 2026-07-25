@@ -17,3 +17,4 @@ run/
 !gradle/wrapper/gradle-wrapper.jar
 
 litematica-modified/
+libs/
