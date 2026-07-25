@@ -1,0 +1,66 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+repositories {
+    // MaLiLib is published here (optional - we also accept it from libs/).
+    maven { url = "https://masa.dy.fi/maven/sakura-ryoko" }
+}
+
+loom {
+    mods {
+        "litestock" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    // For MC 26.x there is no Yarn/intermediary; the Minecraft jar already uses Mojang names directly.
+    // (loom.officialMojangMappings() only works when Fabric meta has mapping data for the version.)
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    // Litematica + MaLiLib jars go in the libs/ folder.
+    // Download from Modrinth for MC 26.1.2 and drop both .jar files there.
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+processResources {
+    def version = project.version
+    inputs.property "version", version
+    filesMatching("fabric.mod.json") {
+        expand "version": version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+    it.options.encoding = "UTF-8"
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.name}" }
+    }
+    doLast {
+        def libsDir = file("build/libs")
+        def currentVersion = project.version
+        libsDir.listFiles().each { file ->
+            if (file.name.endsWith(".jar") && !file.name.contains(currentVersion)) {
+                file.delete()
+            }
+        }
+    }
+}

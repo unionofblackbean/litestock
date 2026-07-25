@@ -1,0 +1,30 @@
+{
+  "key.categories.litestock": "投影备货助手",
+  "key.litestock.scan_toggle": "开始/停止扫描",
+  "key.litestock.select_area": "框选容器区域",
+  "key.litestock.clear_selection": "清除选区",
+
+  "litestock.config.generic.name.autoScanHud": "HUD自动扫描",
+  "litestock.config.generic.comment.autoScanHud": "开启材料列表HUD时自动扫描并高亮容器",
+  "litestock.config.generic.name.cacheExpirySeconds": "缓存过期时间",
+  "litestock.config.generic.comment.cacheExpirySeconds": "容器数据缓存的过期时间(秒)",
+  "litestock.config.generic.name.highlightColor": "高亮颜色",
+  "litestock.config.generic.comment.highlightColor": "包含HUD显示物品的容器高亮框颜色",
+  "litestock.config.generic.name.highlightLineWidth": "高亮框线宽",
+  "litestock.config.generic.comment.highlightLineWidth": "高亮框的线条粗细",
+
+  "litestock.config.hotkeys.name.openConfigGui": "打开配置界面",
+  "litestock.config.hotkeys.comment.openConfigGui": "打开LiteStock配置界面",
+  "litestock.config.hotkeys.name.toggleScan": "切换扫描",
+  "litestock.config.hotkeys.comment.toggleScan": "开始或停止容器扫描",
+  "litestock.config.hotkeys.name.addContainer": "框选添加容器",
+  "litestock.config.hotkeys.comment.addContainer": "框选两个点添加区域内的容器",
+  "litestock.config.hotkeys.name.clearSelection": "清除当前选区",
+  "litestock.config.hotkeys.comment.clearSelection": "清除当前的框选状态",
+
+  "litestock.gui.title.configs": "LiteStock 配置 - %s",
+  "litestock.gui.button.config_gui.generic": "通用设置",
+  "litestock.gui.button.config_gui.hotkeys": "快捷键",
+
+  "litestock.hotkeys.category.hotkeys": "投影备货助手"
+}

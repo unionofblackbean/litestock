@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.litestock.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ClientPacketListenerMixin",
+    "NbtAccounterMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
