@@ -5,10 +5,7 @@ import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.materials.MaterialListBase;
 import fi.dy.masa.litematica.materials.MaterialListEntry;
-import fi.dy.masa.litematica.materials.MaterialListPlacement;
 import fi.dy.masa.litematica.materials.MaterialListSorter;
-import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
-import fi.dy.masa.malilib.interfaces.ICompletionListener;
 import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
@@ -57,11 +54,24 @@ public class MaterialListReader {
     }
 
     public static void refreshMissingMaterials() {
+        // 优先检查 Litematica 的材料列表 HUD
         MaterialListBase existing = DataManager.getMaterialList();
         if (existing != null && !existing.getMaterialsAll().isEmpty()) {
             currentHudDisplayedMaterials = extractHudDisplayedMaterials(existing);
             currentMissingMaterials = extractAllMissingMaterials(existing);
+            return;
         }
+
+        // 检查 fangkuai-material mod 的 HUD
+        if (FangkuaiHudReader.isModLoaded() && FangkuaiHudReader.isHudActive()) {
+            Map<Item, Integer> fangkuaiItems = FangkuaiHudReader.getHudDisplayedMissingItems();
+            currentHudDisplayedMaterials = fangkuaiItems;
+            currentMissingMaterials = fangkuaiItems;
+            return;
+        }
+
+        currentHudDisplayedMaterials = Collections.emptyMap();
+        currentMissingMaterials = Collections.emptyMap();
     }
 
     public static void requestRequiredItems(Consumer<Set<Item>> callback) {
@@ -74,68 +84,35 @@ public class MaterialListReader {
             return;
         }
 
+        // 优先检查 Litematica 的材料列表 HUD
         MaterialListBase existing = DataManager.getMaterialList();
         if (existing != null && !existing.getMaterialsAll().isEmpty()) {
-            Map<Item, Integer> result = extractItemsWithQuantities(existing);
-            currentRequirements = result;
-            currentHudDisplayedMaterials = extractHudDisplayedMaterials(existing);
-            currentMissingMaterials = extractAllMissingMaterials(existing);
-            callback.accept(result);
+            Map<Item, Integer> hudDisplayed = extractHudDisplayedMaterials(existing);
+            Map<Item, Integer> allMissing = extractAllMissingMaterials(existing);
+            currentRequirements = hudDisplayed;
+            currentHudDisplayedMaterials = hudDisplayed;
+            currentMissingMaterials = allMissing;
+            callback.accept(hudDisplayed);
             return;
         }
 
-        List<SchematicPlacement> placements = DataManager.getSchematicPlacementManager()
-                .getAllSchematicsPlacements();
-
-        if (placements.isEmpty()) {
-            currentRequirements = Collections.emptyMap();
-            callback.accept(Collections.emptyMap());
-            return;
+        // 检查 fangkuai-material mod 的 HUD
+        if (FangkuaiHudReader.isModLoaded() && FangkuaiHudReader.isHudActive()) {
+            Map<Item, Integer> fangkuaiItems = FangkuaiHudReader.getHudDisplayedMissingItems();
+            if (!fangkuaiItems.isEmpty()) {
+                currentRequirements = fangkuaiItems;
+                currentHudDisplayedMaterials = fangkuaiItems;
+                currentMissingMaterials = fangkuaiItems;
+                callback.accept(fangkuaiItems);
+                return;
+            }
         }
 
-        pending = true;
-        Map<Item, Integer> allItems = new HashMap<>();
-        int[] remaining = {placements.size()};
-
-        if (remaining[0] == 0) {
-            pending = false;
-            currentRequirements = Collections.emptyMap();
-            callback.accept(Collections.emptyMap());
-            return;
-        }
-
-        for (SchematicPlacement placement : placements) {
-            MaterialListPlacement ml = new MaterialListPlacement(placement, true);
-            ml.setCompletionListener(new ICompletionListener() {
-                @Override
-                public void onTaskCompleted() {
-                    for (MaterialListEntry entry : ml.getMaterialsAll()) {
-                        Item item = entry.getStack().getItem();
-                        allItems.merge(item, entry.getCountTotal(), Integer::sum);
-                    }
-                    remaining[0]--;
-                    if (remaining[0] <= 0) {
-                        pending = false;
-                        currentRequirements = allItems;
-                        currentHudDisplayedMaterials = extractHudDisplayedFromAllPlacements(placements);
-                        currentMissingMaterials = extractAllMissingFromAllPlacements(placements);
-                        callback.accept(allItems);
-                    }
-                }
-
-                @Override
-                public void onTaskAborted() {
-                    remaining[0]--;
-                    if (remaining[0] <= 0) {
-                        pending = false;
-                        currentRequirements = allItems;
-                        currentHudDisplayedMaterials = extractHudDisplayedFromAllPlacements(placements);
-                        currentMissingMaterials = extractAllMissingFromAllPlacements(placements);
-                        callback.accept(allItems);
-                    }
-                }
-            });
-        }
+        // 两个 HUD 都未打开或都为空，返回空
+        currentRequirements = Collections.emptyMap();
+        currentHudDisplayedMaterials = Collections.emptyMap();
+        currentMissingMaterials = Collections.emptyMap();
+        callback.accept(Collections.emptyMap());
     }
 
     private static Set<Item> extractItems(MaterialListBase ml) {
@@ -186,27 +163,4 @@ public class MaterialListReader {
         return items;
     }
 
-    private static Map<Item, Integer> extractHudDisplayedFromAllPlacements(List<SchematicPlacement> placements) {
-        Map<Item, Integer> items = new HashMap<>();
-        for (SchematicPlacement placement : placements) {
-            MaterialListPlacement ml = new MaterialListPlacement(placement, false);
-            Map<Item, Integer> displayed = extractHudDisplayedMaterials(ml);
-            for (Map.Entry<Item, Integer> entry : displayed.entrySet()) {
-                items.merge(entry.getKey(), entry.getValue(), Integer::sum);
-            }
-        }
-        return items;
-    }
-
-    private static Map<Item, Integer> extractAllMissingFromAllPlacements(List<SchematicPlacement> placements) {
-        Map<Item, Integer> items = new HashMap<>();
-        for (SchematicPlacement placement : placements) {
-            MaterialListPlacement ml = new MaterialListPlacement(placement, false);
-            Map<Item, Integer> missing = extractAllMissingMaterials(ml);
-            for (Map.Entry<Item, Integer> entry : missing.entrySet()) {
-                items.merge(entry.getKey(), entry.getValue(), Integer::sum);
-            }
-        }
-        return items;
-    }
 }

@@ -277,11 +277,14 @@ public class ContainerScanner {
         List<BlockPos> matched = new ArrayList<>();
         ContainerCache cache = ContainerCache.getInstance();
 
+        // 扩展 required 集合，包含所有物品别名
+        Set<Item> expanded = expandWithAliases(required);
+
         for (BlockPos pos : positions) {
             Set<Item> items = cache.getItems(pos);
             if (items == null) continue;
             for (Item item : items) {
-                if (required.contains(item)) {
+                if (expanded.contains(item)) {
                     matched.add(pos);
                     break;
                 }
@@ -292,10 +295,12 @@ public class ContainerScanner {
     }
 
     private static boolean containsAny(List<ItemStack> stacks, Set<Item> required) {
+        Set<Item> expanded = expandWithAliases(required);
+
         for (ItemStack stack : stacks) {
             if (stack == null || stack.isEmpty()) continue;
 
-            if (required.contains(stack.getItem())) {
+            if (expanded.contains(stack.getItem())) {
                 return true;
             }
 
@@ -303,7 +308,7 @@ public class ContainerScanner {
                 ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
                 if (contents != null) {
                     for (ItemStack inner : contents.nonEmptyItemCopyStream().toList()) {
-                        if (required.contains(inner.getItem())) {
+                        if (expanded.contains(inner.getItem())) {
                             return true;
                         }
                     }
@@ -311,5 +316,16 @@ public class ContainerScanner {
             }
         }
         return false;
+    }
+
+    /**
+     * 将物品集合扩展为包含所有别名物品的集合。
+     */
+    private static Set<Item> expandWithAliases(Set<Item> items) {
+        Set<Item> result = new HashSet<>(items);
+        for (Item item : items) {
+            result.addAll(com.litestock.litematica.ItemAlias.getMatchingItems(item));
+        }
+        return result;
     }
 }

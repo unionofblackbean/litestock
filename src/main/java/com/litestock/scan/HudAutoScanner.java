@@ -2,6 +2,7 @@ package com.litestock.scan;
 
 import com.litestock.LiteStock;
 import com.litestock.config.LiteStockConfig;
+import com.litestock.litematica.FangkuaiHudReader;
 import com.litestock.litematica.MaterialListReader;
 import com.litestock.render.ChestHighlightRenderer;
 import fi.dy.masa.litematica.data.DataManager;
@@ -11,7 +12,7 @@ import net.minecraft.client.Minecraft;
 import java.util.Set;
 
 /**
- * 监控 Litematica 备货清单 HUD 状态。
+ * 监控备货清单 HUD 状态（支持 Litematica 和 fangkuai-material 两个 mod）。
  *
  * 工作流程（优先从本地缓存读取，避免每次 HUD 激活都触发网络扫描）：
  * 1. HUD 激活时，先尝试从 {@link ContainerCache} 匹配已缓存的容器并立即高亮
@@ -46,15 +47,27 @@ public class HudAutoScanner {
         lastHudActive = hudActive;
     }
 
+    /**
+     * 检测任意一个备货清单 HUD 是否开启。
+     * 优先检查 Litematica，其次检查 fangkuai-material。
+     */
     private static boolean checkHudActive() {
+        // 检查 Litematica 的材料列表 HUD
         try {
             MaterialListBase ml = DataManager.getMaterialList();
-            if (ml == null) return false;
-            // getShouldRenderCustom() 是 IInfoHudRenderer 接口的 public 方法，返回 shouldRender 字段
-            return ml.getHudRenderer().getShouldRenderCustom();
+            if (ml != null && ml.getHudRenderer().getShouldRenderCustom()) {
+                return true;
+            }
         } catch (Exception e) {
-            return false;
+            // ignore
         }
+
+        // 检查 fangkuai-material 的 HUD
+        if (FangkuaiHudReader.isModLoaded() && FangkuaiHudReader.isHudActive()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -69,18 +82,9 @@ public class HudAutoScanner {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        MaterialListReader.requestRequiredItemsWithQuantities(items -> {
-            if (items.isEmpty()) return;
+        MaterialListReader.requestRequiredItemsWithQuantities(hudItems -> {
+            if (hudItems.isEmpty()) return;
 
-            MaterialListReader.refreshMissingMaterials();
-            java.util.Map<net.minecraft.world.item.Item, Integer> hudDisplayed =
-                    MaterialListReader.getCurrentHudDisplayedMaterials();
-
-            if (hudDisplayed.isEmpty()) {
-                return;
-            }
-
-            java.util.Set<net.minecraft.world.item.Item> hudItems = hudDisplayed.keySet();
             LiteStockConfig config = LiteStockConfig.get();
             java.util.List<net.minecraft.core.BlockPos> selected = config.getSelectedContainerPositions();
 
@@ -89,7 +93,7 @@ public class HudAutoScanner {
             }
 
             java.util.List<net.minecraft.core.BlockPos> matched =
-                    ContainerScanner.matchFromCachePublic(selected, hudItems);
+                    ContainerScanner.matchFromCachePublic(selected, hudItems.keySet());
             ChestHighlightRenderer.getInstance().setHighlightedChests(matched);
             config.highlightEnabled = true;
             InventoryTracker.getInstance().startTracking();
@@ -105,7 +109,7 @@ public class HudAutoScanner {
             }
 
             if (needScan) {
-                ContainerScanner.scanWithProgress(hudItems, count -> {
+                ContainerScanner.scanWithProgress(hudItems.keySet(), count -> {
                     if (LiteStockConfig.get().highlightEnabled) {
                         InventoryTracker.getInstance().updateHighlightsFromCache();
                     }

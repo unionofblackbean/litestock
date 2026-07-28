@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -194,14 +195,51 @@ public class ContainerProbe {
         for (int i = 0; i < itemsList.size(); i++) {
             CompoundTag itemTag = itemsList.getCompoundOrEmpty(i);
             if (itemTag.isEmpty()) continue;
-            ItemStack.OPTIONAL_CODEC.parse(NbtOps.INSTANCE, itemTag)
-                    .result()
-                    .ifPresent(stack -> {
-                        if (!stack.isEmpty()) items.add(stack);
-                    });
+
+            // 尝试使用标准 codec 解析
+            Optional<ItemStack> parsed = ItemStack.OPTIONAL_CODEC.parse(NbtOps.INSTANCE, itemTag).result();
+            if (parsed.isPresent() && !parsed.get().isEmpty()) {
+                items.add(parsed.get());
+            } else {
+                // 备用方案：手动从 NBT 中解析物品ID和数量
+                tryFallbackParse(itemTag).ifPresent(stack -> {
+                    if (!stack.isEmpty()) items.add(stack);
+                });
+            }
         }
 
         return items;
+    }
+
+    /**
+     * 当标准 codec 解析失败时的备用方案。
+     * 直接从 NBT 中提取物品ID、数量和 DataComponents。
+     */
+    private Optional<ItemStack> tryFallbackParse(CompoundTag itemTag) {
+        try {
+            if (!itemTag.contains("id")) return Optional.empty();
+
+            Optional<String> idOpt = itemTag.getString("id");
+            if (idOpt.isEmpty()) return Optional.empty();
+            String itemId = idOpt.get();
+
+            int count = 1;
+            if (itemTag.contains("Count")) {
+                Optional<Byte> countOpt = itemTag.getByte("Count");
+                if (countOpt.isPresent()) count = countOpt.get();
+            }
+
+            net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.tryParse(itemId);
+            if (id == null) return Optional.empty();
+
+            net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+            if (item == null) return Optional.empty();
+
+            ItemStack stack = new ItemStack(item, count);
+            return Optional.of(stack);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 
     public Map<BlockPos, List<ItemStack>> getResults() {

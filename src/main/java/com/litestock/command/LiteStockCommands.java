@@ -198,13 +198,13 @@ public class LiteStockCommands {
             return;
         }
 
-        mc.player.sendSystemMessage(Component.literal("[LiteStock] 正在读取投影物品列表...").withStyle(ChatFormatting.YELLOW));
+        mc.player.sendSystemMessage(Component.literal("[LiteStock] 正在读取材料列表HUD...").withStyle(ChatFormatting.YELLOW));
         MaterialListReader.requestRequiredItemsWithQuantities(items -> {
             if (items.isEmpty()) {
-                mc.player.sendSystemMessage(Component.literal("[LiteStock] 未找到投影物品列表，请先加载投影").withStyle(ChatFormatting.RED));
+                mc.player.sendSystemMessage(Component.literal("[LiteStock] 未检测到材料列表HUD，请先打开投影或方块清单的材料列表HUD").withStyle(ChatFormatting.RED));
                 return;
             }
-            mc.player.sendSystemMessage(Component.literal("[LiteStock] 投影需要 " + items.size() + " 种物品，正在扫描箱子...").withStyle(ChatFormatting.YELLOW));
+            mc.player.sendSystemMessage(Component.literal("[LiteStock] HUD显示 " + items.size() + " 种物品，正在扫描箱子...").withStyle(ChatFormatting.YELLOW));
 
             ContainerScanner.scanAndHighlight(items.keySet(), count -> {
                 config.highlightEnabled = true;
@@ -245,13 +245,13 @@ public class LiteStockCommands {
             return;
         }
 
-        mc.player.sendSystemMessage(Component.literal("[LiteStock] 正在读取投影物品列表...").withStyle(ChatFormatting.YELLOW));
+        mc.player.sendSystemMessage(Component.literal("[LiteStock] 正在读取材料列表HUD...").withStyle(ChatFormatting.YELLOW));
         MaterialListReader.requestRequiredItemsWithQuantities(items -> {
             if (items.isEmpty()) {
-                mc.player.sendSystemMessage(Component.literal("[LiteStock] 未找到投影物品列表，请先加载投影").withStyle(ChatFormatting.RED));
+                mc.player.sendSystemMessage(Component.literal("[LiteStock] 未检测到材料列表HUD，请先打开投影或方块清单的材料列表HUD").withStyle(ChatFormatting.RED));
                 return;
             }
-            mc.player.sendSystemMessage(Component.literal("[LiteStock] 投影需要 " + items.size() + " 种物品，正在扫描箱子...").withStyle(ChatFormatting.YELLOW));
+            mc.player.sendSystemMessage(Component.literal("[LiteStock] HUD显示 " + items.size() + " 种物品，正在扫描箱子...").withStyle(ChatFormatting.YELLOW));
 
             ContainerScanner.scanWithProgress(items.keySet(), count -> {
                 config.highlightEnabled = true;
@@ -287,10 +287,10 @@ public class LiteStockCommands {
             return;
         }
 
-        mc.player.sendSystemMessage(Component.literal("[LiteStock] 正在读取投影物品列表...").withStyle(ChatFormatting.YELLOW));
+        mc.player.sendSystemMessage(Component.literal("[LiteStock] 正在读取材料列表HUD...").withStyle(ChatFormatting.YELLOW));
         MaterialListReader.requestRequiredItemsWithQuantities(items -> {
             if (items.isEmpty()) {
-                mc.player.sendSystemMessage(Component.literal("[LiteStock] 未找到投影物品列表，请先加载投影").withStyle(ChatFormatting.RED));
+                mc.player.sendSystemMessage(Component.literal("[LiteStock] 未检测到材料列表HUD，请先打开投影或方块清单的材料列表HUD").withStyle(ChatFormatting.RED));
                 return;
             }
 
@@ -330,8 +330,14 @@ public class LiteStockCommands {
         }
 
         MaterialListReader.requestRequiredItems(items -> {
+            if (items.isEmpty()) {
+                mc.player.sendSystemMessage(Component.literal(
+                        "[LiteStock] 未检测到材料列表HUD，请先打开投影的材料列表HUD（M键）"
+                ).withStyle(ChatFormatting.RED));
+                return;
+            }
             mc.player.sendSystemMessage(Component.literal(
-                    "[LiteStock] 投影共 " + items.size() + " 种物品："
+                    "[LiteStock] HUD显示共 " + items.size() + " 种物品："
             ).withStyle(ChatFormatting.YELLOW));
 
             List<String> names = items.stream()

@@ -70,7 +70,12 @@ public class InventoryTracker {
     }
 
     public int getCollectedCount(Item item) {
-        return collectedCounts.getOrDefault(item, 0);
+        int count = collectedCounts.getOrDefault(item, 0);
+        // 检查别名物品的收集数量
+        for (Item alias : com.litestock.litematica.ItemAlias.getMatchingItems(item)) {
+            count += collectedCounts.getOrDefault(alias, 0);
+        }
+        return count;
     }
 
     public Map<Item, Integer> getCollectedCounts() {
