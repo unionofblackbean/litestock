@@ -10,7 +10,6 @@ import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -18,18 +17,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-/**
- * Reads the required item list from Litematica's loaded schematic placements.
- *
- * <p>Workflow:
- * <ol>
- *   <li>First checks {@link DataManager#getMaterialList()} – if the user already opened
- *       Litematica's Material List GUI, the data is available immediately.</li>
- *   <li>Otherwise, creates a {@link MaterialListPlacement} for every enabled placement
- *       with {@code reCreate=true}, which schedules an async block-counting task.
- *       The {@link ICompletionListener} fires when all tasks finish.</li>
- * </ol>
- */
 public class MaterialListReader {
     private static boolean pending = false;
 
@@ -53,25 +40,47 @@ public class MaterialListReader {
         return currentHudDisplayedMaterials;
     }
 
-    public static void refreshMissingMaterials() {
-        // 优先检查 Litematica 的材料列表 HUD
-        MaterialListBase existing = DataManager.getMaterialList();
-        if (existing != null && !existing.getMaterialsAll().isEmpty()) {
-            currentHudDisplayedMaterials = extractHudDisplayedMaterials(existing);
-            currentMissingMaterials = extractAllMissingMaterials(existing);
-            return;
+    private static boolean isLitematicaHudActive() {
+        try {
+            MaterialListBase ml = DataManager.getMaterialList();
+            if (ml != null && ml.getHudRenderer().getShouldRenderCustom()) {
+                return true;
+            }
+        } catch (Exception e) {
+            // ignore
         }
+        return false;
+    }
 
-        // 检查 fangkuai-material mod 的 HUD
-        if (FangkuaiHudReader.isModLoaded() && FangkuaiHudReader.isHudActive()) {
+    private static boolean isFangkuaiHudActive() {
+        return FangkuaiHudReader.isModLoaded() && FangkuaiHudReader.isHudActive();
+    }
+
+    public static void refreshMissingMaterials() {
+        boolean litematicaActive = isLitematicaHudActive();
+        boolean fangkuaiActive = isFangkuaiHudActive();
+
+        if (fangkuaiActive) {
             Map<Item, Integer> fangkuaiItems = FangkuaiHudReader.getHudDisplayedMissingItems();
             currentHudDisplayedMaterials = fangkuaiItems;
             currentMissingMaterials = fangkuaiItems;
+            LiteStock.LOGGER.debug("refreshMissingMaterials: using fangkuai-material HUD, {} items", fangkuaiItems.size());
             return;
+        }
+
+        if (litematicaActive) {
+            MaterialListBase existing = DataManager.getMaterialList();
+            if (existing != null && !existing.getMaterialsAll().isEmpty()) {
+                currentHudDisplayedMaterials = extractHudDisplayedMaterials(existing);
+                currentMissingMaterials = extractAllMissingMaterials(existing);
+                LiteStock.LOGGER.debug("refreshMissingMaterials: using Litematica HUD, {} hud items", currentHudDisplayedMaterials.size());
+                return;
+            }
         }
 
         currentHudDisplayedMaterials = Collections.emptyMap();
         currentMissingMaterials = Collections.emptyMap();
+        LiteStock.LOGGER.debug("refreshMissingMaterials: no HUD active");
     }
 
     public static void requestRequiredItems(Consumer<Set<Item>> callback) {
@@ -84,34 +93,37 @@ public class MaterialListReader {
             return;
         }
 
-        // 优先检查 Litematica 的材料列表 HUD
-        MaterialListBase existing = DataManager.getMaterialList();
-        if (existing != null && !existing.getMaterialsAll().isEmpty()) {
-            Map<Item, Integer> hudDisplayed = extractHudDisplayedMaterials(existing);
-            Map<Item, Integer> allMissing = extractAllMissingMaterials(existing);
-            currentRequirements = hudDisplayed;
-            currentHudDisplayedMaterials = hudDisplayed;
-            currentMissingMaterials = allMissing;
-            callback.accept(hudDisplayed);
+        boolean litematicaActive = isLitematicaHudActive();
+        boolean fangkuaiActive = isFangkuaiHudActive();
+
+        if (fangkuaiActive) {
+            Map<Item, Integer> fangkuaiItems = FangkuaiHudReader.getHudDisplayedMissingItems();
+            currentRequirements = fangkuaiItems;
+            currentHudDisplayedMaterials = fangkuaiItems;
+            currentMissingMaterials = fangkuaiItems;
+            LiteStock.LOGGER.info("requestRequiredItems: using fangkuai-material HUD, {} items", fangkuaiItems.size());
+            callback.accept(fangkuaiItems);
             return;
         }
 
-        // 检查 fangkuai-material mod 的 HUD
-        if (FangkuaiHudReader.isModLoaded() && FangkuaiHudReader.isHudActive()) {
-            Map<Item, Integer> fangkuaiItems = FangkuaiHudReader.getHudDisplayedMissingItems();
-            if (!fangkuaiItems.isEmpty()) {
-                currentRequirements = fangkuaiItems;
-                currentHudDisplayedMaterials = fangkuaiItems;
-                currentMissingMaterials = fangkuaiItems;
-                callback.accept(fangkuaiItems);
+        if (litematicaActive) {
+            MaterialListBase existing = DataManager.getMaterialList();
+            if (existing != null && !existing.getMaterialsAll().isEmpty()) {
+                Map<Item, Integer> hudDisplayed = extractHudDisplayedMaterials(existing);
+                Map<Item, Integer> allMissing = extractAllMissingMaterials(existing);
+                currentRequirements = hudDisplayed;
+                currentHudDisplayedMaterials = hudDisplayed;
+                currentMissingMaterials = allMissing;
+                LiteStock.LOGGER.info("requestRequiredItems: using Litematica HUD, {} items", hudDisplayed.size());
+                callback.accept(hudDisplayed);
                 return;
             }
         }
 
-        // 两个 HUD 都未打开或都为空，返回空
         currentRequirements = Collections.emptyMap();
         currentHudDisplayedMaterials = Collections.emptyMap();
         currentMissingMaterials = Collections.emptyMap();
+        LiteStock.LOGGER.info("requestRequiredItems: no HUD active, returning empty");
         callback.accept(Collections.emptyMap());
     }
 

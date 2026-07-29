@@ -1,13 +1,17 @@
 package com.litestock.scan;
 
 import com.litestock.LiteStock;
+import com.litestock.litematica.ItemAlias;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.protocol.game.ClientboundTagQueryPacket;
 import net.minecraft.network.protocol.game.ServerboundBlockEntityTagQueryPacket;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -28,29 +32,33 @@ import java.util.function.Consumer;
  * 收到响应按 transactionId 路由。这比串行"发一个等一个"快 N 倍。
  *
  * <p>每个批次发出后，启动超时计时；批次内所有响应收齐或超时后，立即发送下一批。
+ * 超时的查询不会丢弃响应，而是保留等待延迟到达的回包。
  */
 public class ContainerProbe {
     private static final ContainerProbe INSTANCE = new ContainerProbe();
 
-    /** 每批并发发送的查询数量。过大可能触发服务端限流，8 是较稳妥的值。 */
     private static final int BATCH_SIZE = 8;
-    /** 单个批次的最长等待时间（ticks）。超时后未回包的视为失败，立即发下一批。 */
-    private static final int BATCH_TIMEOUT_TICKS = 10;
-    /** 同一位置的最小重新探测间隔（毫秒），避免短时间重复查询。 */
+    private static final int BATCH_TIMEOUT_TICKS = 15;
+    private static final int MAX_PENDING_AGE_TICKS = 40;
+    private static final int MAX_LATE_AGE_TICKS = 80;
     private static final long PROBE_COOLDOWN_MS = 5000;
 
     private final Set<BlockPos> probeQueue = ConcurrentHashMap.newKeySet();
     private final Map<BlockPos, List<ItemStack>> results = new HashMap<>();
     private final Map<BlockPos, Long> lastProbeTime = new HashMap<>();
 
-    /** 当前批次正在等待响应的查询：transactionId -> BlockPos */
     private final Map<Integer, BlockPos> pendingBatch = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> pendingBatchAge = new ConcurrentHashMap<>();
+    private final Map<Integer, BlockPos> lateResponses = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> lateResponseAge = new ConcurrentHashMap<>();
     private int batchTicks = 0;
 
     private volatile boolean probing = false;
     private Runnable onComplete = null;
     private Consumer<BlockPos> progressCallback = null;
     private int transactionIdCounter = 0;
+    private int totalQueriesSent = 0;
+    private int totalResponsesReceived = 0;
 
     public static ContainerProbe getInstance() {
         return INSTANCE;
@@ -65,17 +73,26 @@ public class ContainerProbe {
         progressCallback = null;
         probing = true;
         pendingBatch.clear();
+        pendingBatchAge.clear();
+        lateResponses.clear();
+        lateResponseAge.clear();
         batchTicks = 0;
+        totalQueriesSent = 0;
+        totalResponsesReceived = 0;
 
         long now = System.currentTimeMillis();
+        int skipped = 0;
         for (BlockPos pos : positions) {
             long last = lastProbeTime.getOrDefault(pos, 0L);
             if (now - last > PROBE_COOLDOWN_MS) {
                 probeQueue.add(pos.immutable());
+            } else {
+                skipped++;
             }
         }
 
-        LiteStock.LOGGER.info("Starting tag query probe for {} positions (batch size {})", probeQueue.size(), BATCH_SIZE);
+        LiteStock.LOGGER.info("Starting tag query probe for {} positions (batch size {}, skipped {} due to cooldown)",
+                probeQueue.size(), BATCH_SIZE, skipped);
     }
 
     public void onClientTick() {
@@ -87,27 +104,53 @@ public class ContainerProbe {
             return;
         }
 
-        // 如果当前批次还有未回包的查询，检查是否超时
         if (!pendingBatch.isEmpty()) {
             batchTicks++;
-            if (batchTicks >= BATCH_TIMEOUT_TICKS) {
-                LiteStock.LOGGER.warn("Batch timeout with {} pending queries, moving to next batch", pendingBatch.size());
-                // 超时的位置不写入 results，但触发进度回调
-                Set<BlockPos> timedOut = new HashSet<>(pendingBatch.values());
-                pendingBatch.clear();
-                batchTicks = 0;
-                for (BlockPos pos : timedOut) {
-                    if (progressCallback != null) progressCallback.accept(pos);
+
+            for (Map.Entry<Integer, Integer> entry : new ArrayList<>(pendingBatchAge.entrySet())) {
+                int txId = entry.getKey();
+                int age = entry.getValue() + 1;
+                pendingBatchAge.put(txId, age);
+                if (age > MAX_PENDING_AGE_TICKS) {
+                    BlockPos pos = pendingBatch.remove(txId);
+                    if (pos != null) {
+                        pendingBatchAge.remove(txId);
+                        lateResponses.put(txId, pos);
+                        lateResponseAge.put(txId, 0);
+                        if (progressCallback != null) progressCallback.accept(pos);
+                        LiteStock.LOGGER.debug("Timed out txId={} pos={} after {} ticks (moved to lateResponses)", txId, pos, age);
+                    }
                 }
-            } else {
-                return; // 继续等待当前批次响应
+            }
+
+            if (batchTicks >= BATCH_TIMEOUT_TICKS) {
+                batchTicks = 0;
             }
         }
 
-        // 当前批次已清空，发送下一批
+        if (!lateResponses.isEmpty()) {
+            for (Map.Entry<Integer, Integer> entry : new ArrayList<>(lateResponseAge.entrySet())) {
+                int txId = entry.getKey();
+                int age = entry.getValue() + 1;
+                lateResponseAge.put(txId, age);
+                if (age > MAX_LATE_AGE_TICKS) {
+                    BlockPos pos = lateResponses.remove(txId);
+                    if (pos != null) {
+                        lateResponseAge.remove(txId);
+                        LiteStock.LOGGER.debug("Late response txId={} pos={} dropped after {} total ticks", txId, pos, age);
+                    }
+                }
+            }
+        }
+
+        if (!pendingBatch.isEmpty()) {
+            return;
+        }
+
         if (probeQueue.isEmpty()) {
             probing = false;
-            LiteStock.LOGGER.info("Tag query probe complete: {} results", results.size());
+            LiteStock.LOGGER.info("Tag query probe complete: {} results, sent={} responses={}",
+                    results.size(), totalQueriesSent, totalResponsesReceived);
             if (onComplete != null) {
                 mc.execute(onComplete);
             }
@@ -123,7 +166,6 @@ public class ContainerProbe {
 
         BlockPos origin = mc.player != null ? mc.player.blockPosition() : BlockPos.ZERO;
 
-        // 从队列中取距离最近的 BATCH_SIZE 个位置
         List<BlockPos> batch = new ArrayList<>();
         while (!probeQueue.isEmpty() && batch.size() < BATCH_SIZE) {
             BlockPos nearest = findNearest(origin);
@@ -138,12 +180,14 @@ public class ContainerProbe {
         for (BlockPos pos : batch) {
             int txId = transactionIdCounter++;
             pendingBatch.put(txId, pos.immutable());
+            pendingBatchAge.put(txId, 0);
+            totalQueriesSent++;
             ServerboundBlockEntityTagQueryPacket packet =
                     new ServerboundBlockEntityTagQueryPacket(txId, pos);
             mc.player.connection.send(packet);
         }
 
-        LiteStock.LOGGER.debug("Sent batch of {} queries (pending: {})", batch.size(), pendingBatch.size());
+        LiteStock.LOGGER.debug("Sent batch of {} queries (total pending: {})", batch.size(), pendingBatch.size());
     }
 
     private BlockPos findNearest(BlockPos origin) {
@@ -159,30 +203,42 @@ public class ContainerProbe {
         return nearest;
     }
 
-    /**
-     * 服务端回包时调用。按 transactionId 路由到对应位置。
-     */
     public void onTagQueryResponse(ClientboundTagQueryPacket packet) {
         if (!probing) return;
 
         int txId = packet.getTransactionId();
         BlockPos pos = pendingBatch.remove(txId);
-        if (pos == null) return; // 不在当前批次中（可能已超时清理）
+        boolean isLate = false;
+        if (pos == null) {
+            pos = lateResponses.remove(txId);
+            if (pos != null) {
+                isLate = true;
+                lateResponseAge.remove(txId);
+                LiteStock.LOGGER.debug("Processing late response txId={} pos={}", txId, pos);
+            } else {
+                return;
+            }
+        }
+        pendingBatchAge.remove(txId);
+        totalResponsesReceived++;
 
         CompoundTag tag = packet.getTag();
         if (tag != null) {
             List<ItemStack> items = parseItemsFromNbt(tag);
             results.put(pos, items);
             lastProbeTime.put(pos, System.currentTimeMillis());
+            if (!items.isEmpty()) {
+                LiteStock.LOGGER.debug("Probe pos={}: parsed {} items{}", pos, items.size(), isLate ? " (late)" : "");
+            } else {
+                LiteStock.LOGGER.debug("Probe pos={}: NBT has no items (tag={}){}", pos, tag.size(), isLate ? " (late)" : "");
+            }
+        } else {
+            results.put(pos, new ArrayList<>());
+            LiteStock.LOGGER.debug("Probe pos={}: null tag{}", pos, isLate ? " (late)" : "");
         }
 
         if (progressCallback != null) {
             progressCallback.accept(pos);
-        }
-
-        // 如果当前批次已全部回包，立即发送下一批（不用等下一个 tick）
-        if (pendingBatch.isEmpty()) {
-            batchTicks = 0;
         }
     }
 
@@ -191,30 +247,59 @@ public class ContainerProbe {
         if (tag == null || !tag.contains("Items")) return items;
 
         ListTag itemsList = tag.getListOrEmpty("Items");
+        int codecSuccess = 0;
+        int fallbackSuccess = 0;
+        int failed = 0;
+        int aliased = 0;
 
         for (int i = 0; i < itemsList.size(); i++) {
             CompoundTag itemTag = itemsList.getCompoundOrEmpty(i);
-            if (itemTag.isEmpty()) continue;
-
-            // 尝试使用标准 codec 解析
-            Optional<ItemStack> parsed = ItemStack.OPTIONAL_CODEC.parse(NbtOps.INSTANCE, itemTag).result();
-            if (parsed.isPresent() && !parsed.get().isEmpty()) {
-                items.add(parsed.get());
-            } else {
-                // 备用方案：手动从 NBT 中解析物品ID和数量
-                tryFallbackParse(itemTag).ifPresent(stack -> {
-                    if (!stack.isEmpty()) items.add(stack);
-                });
+            if (itemTag.isEmpty()) {
+                failed++;
+                continue;
             }
+
+            Optional<ItemStack> parsed = ItemStack.OPTIONAL_CODEC.parse(NbtOps.INSTANCE, itemTag).result();
+            ItemStack stack = null;
+            boolean fromCodec = false;
+
+            if (parsed.isPresent() && !parsed.get().isEmpty()) {
+                stack = parsed.get();
+                fromCodec = true;
+            } else {
+                Optional<ItemStack> fallback = tryFallbackParse(itemTag);
+                if (fallback.isPresent() && !fallback.get().isEmpty()) {
+                    stack = fallback.get();
+                }
+            }
+
+            if (stack == null || stack.isEmpty()) {
+                failed++;
+                LiteStock.LOGGER.debug("Failed to parse item #{}", i);
+                continue;
+            }
+
+            Item originalItem = stack.getItem();
+            Identifier origId = BuiltInRegistries.ITEM.getKey(originalItem);
+            Item resolvedItem = ItemAlias.resolveItem(origId.toString());
+            if (resolvedItem != null && resolvedItem != originalItem) {
+                stack = new ItemStack(resolvedItem, stack.getCount());
+                aliased++;
+            }
+
+            items.add(stack);
+            if (fromCodec) codecSuccess++;
+            else fallbackSuccess++;
+        }
+
+        if (failed > 0 || aliased > 0) {
+            LiteStock.LOGGER.debug("NBT parse summary: codec={}, fallback={}, aliased={}, failed={} out of {} items",
+                    codecSuccess, fallbackSuccess, aliased, failed, itemsList.size());
         }
 
         return items;
     }
 
-    /**
-     * 当标准 codec 解析失败时的备用方案。
-     * 直接从 NBT 中提取物品ID、数量和 DataComponents。
-     */
     private Optional<ItemStack> tryFallbackParse(CompoundTag itemTag) {
         try {
             if (!itemTag.contains("id")) return Optional.empty();
@@ -223,16 +308,29 @@ public class ContainerProbe {
             if (idOpt.isEmpty()) return Optional.empty();
             String itemId = idOpt.get();
 
+            if (itemId == null || itemId.isBlank()) return Optional.empty();
+
             int count = 1;
-            if (itemTag.contains("Count")) {
-                Optional<Byte> countOpt = itemTag.getByte("Count");
-                if (countOpt.isPresent()) count = countOpt.get();
+            if (itemTag.contains("count")) {
+                Optional<Integer> countOpt = itemTag.getInt("count");
+                if (countOpt.isPresent()) {
+                    count = countOpt.get();
+                } else {
+                    Optional<Byte> byteOpt = itemTag.getByte("Count");
+                    if (byteOpt.isPresent()) {
+                        count = byteOpt.get();
+                    }
+                }
+            } else if (itemTag.contains("Count")) {
+                Optional<Byte> byteOpt = itemTag.getByte("Count");
+                if (byteOpt.isPresent()) {
+                    count = byteOpt.get();
+                }
             }
 
-            net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.tryParse(itemId);
-            if (id == null) return Optional.empty();
+            if (count <= 0) count = 1;
 
-            net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+            Item item = ItemAlias.resolveItem(itemId);
             if (item == null) return Optional.empty();
 
             ItemStack stack = new ItemStack(item, count);
@@ -262,6 +360,9 @@ public class ContainerProbe {
         probing = false;
         probeQueue.clear();
         pendingBatch.clear();
+        pendingBatchAge.clear();
+        lateResponses.clear();
+        lateResponseAge.clear();
         batchTicks = 0;
         onComplete = null;
         progressCallback = null;
