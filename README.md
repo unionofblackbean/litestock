@@ -1,42 +1,4 @@
 # LiteStock
-[English](#english) | [中文](#中文)
----
-<a name="english"></a>
-## English
-Litematica addon for logistics restocking. Automatically scans and highlights containers that contain items needed by your projection's material list.
-### Features
-- **HUD Auto-Scan**: Automatically scans containers when the Litematica material list HUD is displayed, and clears highlights when the HUD is closed
-- **F3+i Container Reading**: Reads container contents using the in-game F3+i mechanism (ServerboundBlockEntityTagQueryPacket), no need to open containers
-- **Container Selection**: Manually select which containers to scan using two-point selection mode
-- **Preset System**: Save and share container position configurations via preset files
-- **Local Cache**: Container data is cached locally for fast repeated access
-- **Highlight Customization**: Customizable highlight color and line width
-- **Works with Hidden Schematics**: Can read material lists even when the projection is hidden
-### Dependencies
-- Minecraft 26.1.2+
-- Fabric Loader 0.19.2+
-- Fabric API
-- [MaLiLib](https://github.com/maruohon/malilib)
-- [Litematica](https://github.com/maruohon/litematica)
-### Installation
-1. Download the latest `.jar` file from the [Releases](https://github.com/unionofblackbean/litestock/releases) page
-2. Place the `.jar` file into your Minecraft `mods` folder
-3. Launch the game with the Fabric profile
-### Hotkeys
-| Key | Function |
-|-----|----------|
-| `H` | Toggle scan |
-| `K` | Add container (two-point selection mode) |
-| `L` | Clear current selection |
-| `L + O` | Open config GUI |
-### Commands
-- `/litestock scan` - Normal scan
-- `/litestock scan show` - Show cached container data
-- `/litestock scan clear` - Clear cache and selection
-- `/litestock scan save_cache <1/2/3>` - Save to cache slot
-- `/litestock scan cache <1/2/3>` - Load from cache slot
-- `/litestock preset save <name>` - Save preset
-- `/litestock pre# LiteStock
 
 [English](#english) | [中文](#中文)
 
@@ -50,6 +12,7 @@ Litematica addon for logistics restocking. Automatically scans and highlights co
 ### Features
 
 - **HUD Auto-Scan**: Automatically scans containers when the Litematica material list HUD is displayed, and clears highlights when the HUD is closed
+- **Fangkuai-Material HUD Support**: Also supports the fangkuai-material mod's task HUD. When both HUDs are active, fangkuai-material takes priority
 - **F3+i Container Reading**: Reads container contents using the in-game F3+i mechanism (ServerboundBlockEntityTagQueryPacket), no need to open containers
 - **Container Selection**: Manually select which containers to scan using two-point selection mode
 - **Preset System**: Save and share container position configurations via preset files
@@ -83,10 +46,13 @@ Litematica addon for logistics restocking. Automatically scans and highlights co
 ### Commands
 
 - `/litestock scan` - Normal scan
+- `/litestock scan start` - Start scan with progress display
+- `/litestock scan stop` - Stop scan
 - `/litestock scan show` - Show cached container data
 - `/litestock scan clear` - Clear cache and selection
 - `/litestock scan save_cache <1/2/3>` - Save to cache slot
 - `/litestock scan cache <1/2/3>` - Load from cache slot
+- `/litestock clear` - Clear highlights
 - `/litestock preset save <name>` - Save preset
 - `/litestock preset load <name>` - Load preset
 - `/litestock preset list` - List presets
@@ -124,6 +90,7 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 ### 功能特性
 
 - **HUD 自动扫描**：显示 Litematica 材料清单 HUD 时自动扫描容器，关闭 HUD 时清除高亮
+- **方块清单 HUD 支持**：同时支持方块清单（fangkuai-material）mod 的备货任务 HUD。当两个 HUD 同时激活时，方块清单优先
 - **F3+i 容器读取**：使用游戏内 F3+i 机制（ServerboundBlockEntityTagQueryPacket）读取容器内容，无需打开容器
 - **容器选择**：通过两点框选模式手动选择要扫描的容器
 - **预设系统**：通过预设文件保存和分享容器位置配置
@@ -157,10 +124,13 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 ### 命令
 
 - `/litestock scan` - 普通扫描
+- `/litestock scan start` - 开始扫描（显示进度）
+- `/litestock scan stop` - 停止扫描
 - `/litestock scan show` - 显示缓存的容器数据
 - `/litestock scan clear` - 清除缓存和选区
 - `/litestock scan save_cache <1/2/3>` - 保存到缓存槽
 - `/litestock scan cache <1/2/3>` - 从缓存槽加载
+- `/litestock clear` - 清除高亮
 - `/litestock preset save <名称>` - 保存预设
 - `/litestock preset load <名称>` - 加载预设
 - `/litestock preset list` - 列出预设
@@ -191,11 +161,3 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 ### 许可证
 
 MIT License
-set load <name>` - Load preset
-- `/litestock preset list` - List presets
-- `/litestock preset delete <name>` - Delete preset
-### Configuration
-Access the config GUI with `L + O`, or via Mod Menu.
-Available options:
-- **HUD Auto-Scan**: Automatically scan containers when material list HUD is displayed (default: on)
-- **Cache Expiry (seconds)**: How long cached container data r
