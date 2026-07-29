@@ -8,7 +8,6 @@ import com.litestock.scan.ContainerCache;
 import com.litestock.scan.ContainerProbe;
 import com.litestock.scan.ContainerScanner;
 import com.litestock.scan.InventoryTracker;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -33,12 +32,6 @@ public class LiteStockCommands {
                                     .executes(ctx -> scanShow()))
                             .then(ClientCommands.literal("clear")
                                     .executes(ctx -> scanClear()))
-                            .then(ClientCommands.literal("save_cache")
-                                    .then(ClientCommands.argument("slot", IntegerArgumentType.integer(1, 3))
-                                            .executes(ctx -> saveCache(IntegerArgumentType.getInteger(ctx, "slot")))))
-                            .then(ClientCommands.literal("cache")
-                                    .then(ClientCommands.argument("slot", IntegerArgumentType.integer(1, 3))
-                                            .executes(ctx -> loadCache(IntegerArgumentType.getInteger(ctx, "slot")))))
                             .executes(ctx -> scan()))
                     .then(ClientCommands.literal("clear")
                             .executes(ctx -> clear()))
@@ -122,52 +115,6 @@ public class LiteStockCommands {
         mc.player.sendSystemMessage(Component.literal(
                 "[LiteStock] 已清空缓存（" + cacheCount + " 个容器）和选区（" + selectionCount + " 个容器）"
         ).withStyle(ChatFormatting.GRAY));
-        return 1;
-    }
-
-    private static int saveCache(int slot) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return 0;
-
-        ContainerCache cache = ContainerCache.getInstance();
-        int count = cache.size();
-        boolean success = cache.saveToSlot(slot);
-
-        if (success) {
-            mc.player.sendSystemMessage(Component.literal(
-                    "[LiteStock] 已保存 " + count + " 个容器到 " + slot + " 号缓存槽"
-            ).withStyle(ChatFormatting.GREEN));
-        } else {
-            mc.player.sendSystemMessage(Component.literal(
-                    "[LiteStock] 保存失败，缓存槽编号必须是 1-3"
-            ).withStyle(ChatFormatting.RED));
-        }
-        return 1;
-    }
-
-    private static int loadCache(int slot) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return 0;
-
-        ContainerCache cache = ContainerCache.getInstance();
-        if (!cache.hasSlot(slot)) {
-            mc.player.sendSystemMessage(Component.literal(
-                    "[LiteStock] " + slot + " 号缓存槽为空，请先使用 save_cache 保存"
-            ).withStyle(ChatFormatting.RED));
-            return 1;
-        }
-
-        boolean success = cache.loadFromSlot(slot);
-        if (success) {
-            int count = cache.getSlotSize(slot);
-            mc.player.sendSystemMessage(Component.literal(
-                    "[LiteStock] 已从 " + slot + " 号缓存槽加载 " + count + " 个容器"
-            ).withStyle(ChatFormatting.GREEN));
-        } else {
-            mc.player.sendSystemMessage(Component.literal(
-                    "[LiteStock] 加载失败，缓存槽编号必须是 1-3"
-            ).withStyle(ChatFormatting.RED));
-        }
         return 1;
     }
 

@@ -50,8 +50,6 @@ Litematica addon for logistics restocking. Automatically scans and highlights co
 - `/litestock scan stop` - Stop scan
 - `/litestock scan show` - Show cached container data
 - `/litestock scan clear` - Clear cache and selection
-- `/litestock scan save_cache <1/2/3>` - Save to cache slot
-- `/litestock scan cache <1/2/3>` - Load from cache slot
 - `/litestock clear` - Clear highlights
 - `/litestock preset save <name>` - Save preset
 - `/litestock preset load <name>` - Load preset
@@ -128,8 +126,6 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 - `/litestock scan stop` - 停止扫描
 - `/litestock scan show` - 显示缓存的容器数据
 - `/litestock scan clear` - 清除缓存和选区
-- `/litestock scan save_cache <1/2/3>` - 保存到缓存槽
-- `/litestock scan cache <1/2/3>` - 从缓存槽加载
 - `/litestock clear` - 清除高亮
 - `/litestock preset save <名称>` - 保存预设
 - `/litestock preset load <名称>` - 加载预设

@@ -10,10 +10,13 @@ import com.litestock.config.LiteStockConfig;
 import com.litestock.config.PresetConfig;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
+import fi.dy.masa.malilib.gui.GuiTextInput;
 import fi.dy.masa.malilib.gui.button.ButtonBase;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.gui.button.IButtonActionListener;
+import fi.dy.masa.malilib.interfaces.IStringConsumer;
 import fi.dy.masa.malilib.util.StringUtils;
+import net.minecraft.client.Minecraft;
 
 public class GuiConfigs extends GuiConfigsBase {
     private static ConfigGuiTab tab = ConfigGuiTab.GENERIC;
@@ -38,6 +41,7 @@ public class GuiConfigs extends GuiConfigsBase {
             int presetX = 10;
             int presetY = 50;
             this.createPresetButton(presetX, presetY);
+            this.createSaveContainerButton(presetX + 210, presetY);
         }
     }
 
@@ -46,6 +50,12 @@ public class GuiConfigs extends GuiConfigsBase {
         String label = "预设: " + currentName + " (点击切换)";
         ButtonGeneric button = new ButtonGeneric(x, y, 200, 20, label);
         this.addButton(button, new PresetButtonListener(this));
+    }
+
+    private void createSaveContainerButton(int x, int y) {
+        String label = "保存容器列表";
+        ButtonGeneric button = new ButtonGeneric(x, y, 120, 20, label);
+        this.addButton(button, new SaveContainerButtonListener(this));
     }
 
     private int createButton(int x, int y, int width, ConfigGuiTab tab) {
@@ -119,6 +129,57 @@ public class GuiConfigs extends GuiConfigsBase {
 
             presetConfig.loadPreset(nextName, config);
             button.setDisplayString("预设: " + nextName + " (点击切换)");
+        }
+    }
+
+    private static class SaveContainerButtonListener implements IButtonActionListener {
+        private final GuiConfigs parent;
+
+        public SaveContainerButtonListener(GuiConfigs parent) {
+            this.parent = parent;
+        }
+
+        @Override
+        public void actionPerformedWithButton(ButtonBase button, int mouseButton) {
+            LiteStockConfig config = LiteStockConfig.get();
+            List<net.minecraft.core.BlockPos> positions = config.getSelectedContainerPositions();
+
+            if (positions.isEmpty()) {
+                return;
+            }
+
+            String defaultName = config.currentPresetName != null ? config.currentPresetName : "preset";
+            GuiTextInput input = new GuiTextInput(
+                    160,
+                    "保存容器列表",
+                    defaultName,
+                    Minecraft.getInstance().screen,
+                    new SaveContainerConsumer(parent)
+            );
+            input.setParent(Minecraft.getInstance().screen);
+            Minecraft.getInstance().setScreen(input);
+        }
+    }
+
+    private static class SaveContainerConsumer implements IStringConsumer {
+        private final GuiConfigs parent;
+
+        public SaveContainerConsumer(GuiConfigs parent) {
+            this.parent = parent;
+        }
+
+        @Override
+        public void setString(String name) {
+            if (name == null || name.isBlank()) return;
+
+            LiteStockConfig config = LiteStockConfig.get();
+            List<net.minecraft.core.BlockPos> positions = config.getSelectedContainerPositions();
+            if (positions.isEmpty()) return;
+
+            PresetConfig.get().savePreset(name, positions);
+            config.currentPresetName = name;
+            LiteStockConfig.save();
+            parent.initGui();
         }
     }
 

@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Caches container contents (per BlockPos) so we can look them up later
@@ -123,49 +122,5 @@ public class ContainerCache {
         stackCache.entrySet().removeIf(e -> !itemCache.containsKey(e.getKey()));
         itemCountCache.entrySet().removeIf(e -> !itemCache.containsKey(e.getKey()));
         timestamps.entrySet().removeIf(e -> !itemCache.containsKey(e.getKey()));
-    }
-
-    private static final int NUM_CACHE_SLOTS = 3;
-    private final Map<Integer, Map<BlockPos, Set<Item>>> slotItemCache = new HashMap<>();
-    private final Map<Integer, Map<BlockPos, List<ItemStack>>> slotStackCache = new HashMap<>();
-    private final Map<Integer, Map<BlockPos, Map<Item, Integer>>> slotItemCountCache = new HashMap<>();
-    private final Map<Integer, Map<BlockPos, Long>> slotTimestamps = new HashMap<>();
-
-    public boolean saveToSlot(int slot) {
-        if (slot < 1 || slot > NUM_CACHE_SLOTS) return false;
-        slotItemCache.put(slot, new HashMap<>(itemCache));
-        slotStackCache.put(slot, stackCache.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue()))));
-        slotItemCountCache.put(slot, itemCountCache.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> new HashMap<>(e.getValue()))));
-        slotTimestamps.put(slot, new HashMap<>(timestamps));
-        return true;
-    }
-
-    public boolean loadFromSlot(int slot) {
-        if (slot < 1 || slot > NUM_CACHE_SLOTS) return false;
-        if (!slotItemCache.containsKey(slot)) return false;
-        itemCache.clear();
-        stackCache.clear();
-        itemCountCache.clear();
-        timestamps.clear();
-        itemCache.putAll(slotItemCache.get(slot));
-        stackCache.putAll(slotStackCache.get(slot).entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue()))));
-        itemCountCache.putAll(slotItemCountCache.get(slot).entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> new HashMap<>(e.getValue()))));
-        timestamps.putAll(slotTimestamps.get(slot));
-        return true;
-    }
-
-    public int getSlotSize(int slot) {
-        if (slot < 1 || slot > NUM_CACHE_SLOTS) return 0;
-        Map<BlockPos, Set<Item>> cache = slotItemCache.get(slot);
-        return cache != null ? cache.size() : 0;
-    }
-
-    public boolean hasSlot(int slot) {
-        if (slot < 1 || slot > NUM_CACHE_SLOTS) return false;
-        return slotItemCache.containsKey(slot);
     }
 }
