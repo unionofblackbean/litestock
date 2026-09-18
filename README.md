@@ -152,7 +152,7 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 
 ### 备注
 
-该mod为纯添加无自然的纯web coding的AI编写mod，如有不足还望体谅
+该mod为纯添加无自然的纯vibe coding的AI编写mod，如有不足还望体谅
 
 ### 许可证
 
