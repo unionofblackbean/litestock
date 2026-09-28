@@ -94,8 +94,11 @@ public class HudAutoScanner {
 
             java.util.List<net.minecraft.core.BlockPos> matched =
                     ContainerScanner.matchFromCachePublic(selected, hudItems.keySet());
-            ChestHighlightRenderer.getInstance().setHighlightedChests(matched);
-            config.highlightEnabled = true;
+            // 搜索模式优先级最高，HUD 不覆盖搜索高亮
+            if (!com.litestock.event.InputHandler.isSearching()) {
+                ChestHighlightRenderer.getInstance().setHighlightedChests(matched);
+                config.highlightEnabled = true;
+            }
             InventoryTracker.getInstance().startTracking();
 
             // 检查是否有过期/缺失的缓存，决定是否需要后台扫描

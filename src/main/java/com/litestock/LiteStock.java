@@ -38,6 +38,7 @@ public class LiteStock implements ClientModInitializer {
             ContainerProbe.getInstance().onClientTick();
             InventoryTracker.getInstance().updateCollectedCounts();
             HudAutoScanner.onClientTick();
+            com.litestock.event.InputHandler.onClientTick();
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {

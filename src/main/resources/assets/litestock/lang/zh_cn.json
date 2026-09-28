@@ -21,6 +21,8 @@
   "litestock.config.hotkeys.comment.addContainer": "框选两个点添加区域内的容器",
   "litestock.config.hotkeys.name.clearSelection": "清除当前选区",
   "litestock.config.hotkeys.comment.clearSelection": "清除当前的框选状态",
+  "litestock.config.hotkeys.name.searchItem": "按物品名搜索箱子",
+  "litestock.config.hotkeys.comment.searchItem": "弹出输入框，输入物品名后高亮包含该物品的箱子",
 
   "litestock.gui.title.configs": "LiteStock 配置 - %s",
   "litestock.gui.button.config_gui.generic": "通用设置",

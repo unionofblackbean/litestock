@@ -70,7 +70,6 @@ public class ContainerProbe {
         probeQueue.clear();
         results.clear();
         onComplete = callback;
-        progressCallback = null;
         probing = true;
         pendingBatch.clear();
         pendingBatchAge.clear();
@@ -366,5 +365,10 @@ public class ContainerProbe {
         batchTicks = 0;
         onComplete = null;
         progressCallback = null;
+    }
+
+    /** 强制下次 startProbe 重新探测所有箱子，忽略 5 秒冷却。 */
+    public void resetCooldown() {
+        lastProbeTime.clear();
     }
 }

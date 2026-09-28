@@ -2,6 +2,7 @@ package com.litestock.keybind;
 
 import com.litestock.LiteStock;
 import com.litestock.command.LiteStockCommands;
+import com.litestock.config.Hotkeys;
 import com.litestock.config.LiteStockConfig;
 import com.litestock.scan.SelectionManager;
 import net.minecraft.ChatFormatting;
@@ -42,19 +43,19 @@ public class KeyBindings {
     }
 
     public static void onClientTick() {
+        // 保留空实现：实际按键处理已迁移到 malilib Hotkeys 的回调（见 InputHandler），
+        // 这样用户在 malilib 配置 GUI 里改键后能立即生效。
+    }
+
+    public static void handleSelectArea() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
+        handleSelectArea(mc);
+    }
 
-        if (SCAN_TOGGLE.consumeClick()) {
-            LiteStockCommands.triggerScan();
-        }
-
-        if (SELECT_AREA.consumeClick()) {
-            handleSelectArea(mc);
-        }
-
-        if (CLEAR_SELECTION.consumeClick()) {
-            SelectionManager.getInstance().clear();
+    public static void clearSelection() {
+        Minecraft mc = Minecraft.getInstance();
+        SelectionManager.getInstance().clear();
+        if (mc.player != null) {
             mc.player.sendSystemMessage(Component.literal("[LiteStock] 已清除选区").withStyle(ChatFormatting.GOLD));
         }
     }
@@ -74,10 +75,11 @@ public class KeyBindings {
 
         if (!sel.hasPos1()) {
             sel.setPos1(pos.immutable());
+            String keyName = Hotkeys.ADD_CONTAINER.getKeybind().getKeysDisplayString();
             mc.player.sendSystemMessage(Component.literal(
                 "[LiteStock] 选区第一点: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()
             ).withStyle(ChatFormatting.GREEN).append(
-                Component.literal(" （移动准心到第二点再按 K）").withStyle(ChatFormatting.GRAY)
+                Component.literal(" （移动准心到第二点再按 " + keyName + "）").withStyle(ChatFormatting.GRAY)
             ));
         } else {
             sel.setPos2(pos.immutable());

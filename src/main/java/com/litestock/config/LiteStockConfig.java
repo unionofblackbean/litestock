@@ -41,6 +41,9 @@ public class LiteStockConfig {
     public List<String> selectedContainers = new ArrayList<>();
     public String currentPresetName = "default";
 
+    // 本地存储搜索坐标：格式 "item_registry_name;x;y;z"
+    public List<String> localSearchPoints = new ArrayList<>();
+
     public boolean isContainerSelected(BlockPos pos) {
         String key = pos.getX() + "," + pos.getY() + "," + pos.getZ();
         return selectedContainers.contains(key);

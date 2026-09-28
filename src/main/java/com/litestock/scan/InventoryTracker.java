@@ -98,7 +98,9 @@ public class InventoryTracker {
         Set<Item> hudItemSet = hudDisplayed.keySet();
 
         if (hudItemSet.isEmpty()) {
-            ChestHighlightRenderer.getInstance().setHighlightedChests(new java.util.ArrayList<>());
+            if (!com.litestock.event.InputHandler.isSearching()) {
+                ChestHighlightRenderer.getInstance().setHighlightedChests(new java.util.ArrayList<>());
+            }
             return;
         }
 
@@ -107,7 +109,9 @@ public class InventoryTracker {
         java.util.List<net.minecraft.core.BlockPos> selected = config.getSelectedContainerPositions();
         java.util.List<net.minecraft.core.BlockPos> matched =
                 ContainerScanner.matchFromCachePublic(selected, hudItemSet);
-        ChestHighlightRenderer.getInstance().setHighlightedChests(matched);
+        if (!com.litestock.event.InputHandler.isSearching()) {
+            ChestHighlightRenderer.getInstance().setHighlightedChests(matched);
+        }
     }
 
     public void updateHighlightsFromCache() {
