@@ -36,6 +36,11 @@ repositories {
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
     }
+    maven {
+        name = 'TerraformersMC'
+        url = 'https://maven.terraformersmc.com/releases/'
+        content { includeGroup 'com.terraformersmc' }
+    }
 }
 
 loom {
@@ -55,6 +60,7 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${target.fabricApi}"
     implementation "maven.modrinth:litematica:${target.litematica}"
     implementation "maven.modrinth:malilib:${target.malilib}"
+    compileOnly('com.terraformersmc:modmenu:18.0.2') { transitive = false }
 }
 
 processResources {

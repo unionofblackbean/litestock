@@ -15,6 +15,9 @@
   "entrypoints": {
     "client": [
       "com.litestock.LiteStock"
+    ],
+    "modmenu": [
+      "com.litestock.gui.LiteStockModMenu"
     ]
   },
   "mixins": [
