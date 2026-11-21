@@ -51,11 +51,19 @@ public class Configs implements IConfigHandler {
                 GENERIC_KEY + ".name.highlightLineWidth"
         );
 
+        public static final ConfigBoolean DEBUG_LOGGING = new ConfigBoolean(
+                "debugLogging", false,
+                GENERIC_KEY + ".comment.debugLogging",
+                "Debug Logging",
+                GENERIC_KEY + ".name.debugLogging"
+        );
+
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 AUTO_SCAN_HUD,
                 CACHE_EXPIRY_SECONDS,
                 HIGHLIGHT_COLOR,
-                HIGHLIGHT_LINE_WIDTH
+                HIGHLIGHT_LINE_WIDTH,
+                DEBUG_LOGGING
         );
     }
 
@@ -78,6 +86,12 @@ public class Configs implements IConfigHandler {
             }
         } else {
             LiteStock.LOGGER.warn("Config file '{}' not found, using defaults", configFile.toAbsolutePath());
+        }
+
+        if (Generic.DEBUG_LOGGING.getBooleanValue()) {
+            var selectionKey = Hotkeys.ADD_CONTAINER.getKeybind();
+            LiteStock.debugLog("Selection hotkey configured (keys={}, settings={})",
+                    selectionKey.getStringValue(), selectionKey.getSettings().toJson());
         }
     }
 

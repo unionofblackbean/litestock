@@ -2,5 +2,7 @@
   "key.categories.litestock": "LiteStock",
   "key.litestock.scan_toggle": "Toggle Scan",
   "key.litestock.select_area": "Select Container Area",
-  "key.litestock.clear_selection": "Clear Selection"
+  "key.litestock.clear_selection": "Clear Selection",
+  "litestock.config.generic.name.debugLogging": "Debug Logging",
+  "litestock.config.generic.comment.debugLogging": "Write selection diagnostics to logs/latest.log"
 }

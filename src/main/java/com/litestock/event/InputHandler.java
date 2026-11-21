@@ -3,6 +3,7 @@ package com.litestock.event;
 import com.litestock.LiteStock;
 import com.litestock.config.Hotkeys;
 import com.litestock.gui.GuiConfigs;
+import com.litestock.keybind.KeyBindings;
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import fi.dy.masa.malilib.hotkeys.IHotkeyCallback;
@@ -17,6 +18,13 @@ import net.minecraft.client.Minecraft;
 public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IMouseInputHandler {
     public InputHandler() {
         Hotkeys.OPEN_CONFIG_GUI.getKeybind().setCallback(new KeyCallbackOpenConfigGui());
+        Hotkeys.ADD_CONTAINER.getKeybind().setCallback((action, key) -> {
+            if (action == KeyAction.RELEASE && key.getSettings().getActivateOn() == KeyAction.BOTH) {
+                return false;
+            }
+            LiteStock.debugLog("Selection hotkey triggered (keys={}, action={})", key.getStringValue(), action);
+            return KeyBindings.handleSelectArea(Minecraft.getInstance(), key.getKeysDisplayString());
+        });
     }
 
     @Override

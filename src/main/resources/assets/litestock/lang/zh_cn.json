@@ -12,6 +12,8 @@
   "litestock.config.generic.comment.highlightColor": "包含HUD显示物品的容器高亮框颜色",
   "litestock.config.generic.name.highlightLineWidth": "高亮框线宽",
   "litestock.config.generic.comment.highlightLineWidth": "高亮框的线条粗细",
+  "litestock.config.generic.name.debugLogging": "调试日志",
+  "litestock.config.generic.comment.debugLogging": "将选区热键和框选诊断信息写入 logs/latest.log",
 
   "litestock.config.hotkeys.name.openConfigGui": "打开配置界面",
   "litestock.config.hotkeys.comment.openConfigGui": "打开LiteStock配置界面",
