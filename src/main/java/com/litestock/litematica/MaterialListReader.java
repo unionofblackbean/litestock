@@ -6,6 +6,8 @@ import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.materials.MaterialListBase;
 import fi.dy.masa.litematica.materials.MaterialListEntry;
 import fi.dy.masa.litematica.materials.MaterialListSorter;
+import fi.dy.masa.litematica.materials.MaterialListUtils;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
@@ -109,6 +111,12 @@ public class MaterialListReader {
         if (litematicaActive) {
             MaterialListBase existing = DataManager.getMaterialList();
             if (existing != null && !existing.getMaterialsAll().isEmpty()) {
+                // HUD activation can reach the client tick before Litematica's first HUD render.
+                var player = Minecraft.getInstance().player;
+                if (player != null) {
+                    MaterialListUtils.updateAvailableCounts(existing.getMaterialsAll(), player);
+                }
+                existing.recreateFilteredList();
                 Map<Item, Integer> hudDisplayed = extractHudDisplayedMaterials(existing);
                 Map<Item, Integer> allMissing = extractAllMissingMaterials(existing);
                 currentRequirements = hudDisplayed;

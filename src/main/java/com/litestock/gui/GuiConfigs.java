@@ -16,7 +16,6 @@ import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.gui.button.IButtonActionListener;
 import fi.dy.masa.malilib.interfaces.IStringConsumer;
 import fi.dy.masa.malilib.util.StringUtils;
-import net.minecraft.client.Minecraft;
 
 public class GuiConfigs extends GuiConfigsBase {
     private static ConfigGuiTab tab = ConfigGuiTab.GENERIC;
@@ -153,11 +152,10 @@ public class GuiConfigs extends GuiConfigsBase {
                     160,
                     "保存容器列表",
                     defaultName,
-                    Minecraft.getInstance().screen,
+                    parent,
                     new SaveContainerConsumer(parent)
             );
-            input.setParent(Minecraft.getInstance().screen);
-            Minecraft.getInstance().setScreen(input);
+            openGui(input);
         }
     }
 
