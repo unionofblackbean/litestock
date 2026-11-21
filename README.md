@@ -34,7 +34,7 @@ Litematica addon for logistics restocking. Automatically scans and highlights co
 
 ### Installation
 
-1. Choose the LiteStock JAR whose `mc` version matches your game exactly. For example, use `litestock-mc26.3-1.5.2.jar` with Minecraft 26.3. [Releases](https://github.com/unionofblackbean/litestock/releases)
+1. Choose the LiteStock JAR whose `mc` version matches your game exactly. For example, use `litestock-mc26.3-1.5.3.jar` with Minecraft 26.3. [Releases](https://github.com/unionofblackbean/litestock/releases)
 2. Place it and the matching dependencies in your Minecraft `mods` folder, replacing any previous LiteStock JAR.
 3. Launch the game with the Fabric profile.
 
@@ -70,6 +70,7 @@ Available options:
 - **Cache Expiry (seconds)**: How long cached container data remains valid (default: 300)
 - **Highlight Color**: Color of the container highlight box (default: yellow)
 - **Highlight Line Width**: Thickness of the highlight box lines (default: 2.5)
+- **Debug Logging** (off by default). Enable it, reproduce the selection issue, and search your instance's `logs/latest.log` for `[LiteStock Debug]`.
 
 ### Building
 
@@ -116,7 +117,7 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 
 ### 安装
 
-1. 选择文件名中的 `mc` 版本与游戏完全一致的 LiteStock JAR。例如 Minecraft 26.3 使用 `litestock-mc26.3-1.5.2.jar`。[发布页](https://github.com/unionofblackbean/litestock/releases)
+1. 选择文件名中的 `mc` 版本与游戏完全一致的 LiteStock JAR。例如 Minecraft 26.3 使用 `litestock-mc26.3-1.5.3.jar`。[发布页](https://github.com/unionofblackbean/litestock/releases)
 2. 将 LiteStock 和对应的依赖放入游戏的 `mods` 文件夹，替换旧的 LiteStock JAR。
 3. 使用 Fabric 配置启动游戏。
 
@@ -152,6 +153,7 @@ Mod Menu 和 Masa Gadget 快速切换菜单也可以直接打开 LiteStock 设�
 - **缓存过期时间（秒）**：缓存的容器数据有效期（默认：300）
 - **高亮颜色**：容器高亮框的颜色（默认：黄色）
 - **高亮框线宽**：高亮框线条粗细（默认：2.5）
+- **调试日志**（默认关闭）。开启后复现选区问题，再到游戏实例的 `logs/latest.log` 搜索 `[LiteStock Debug]`。
 
 ### 构建
 

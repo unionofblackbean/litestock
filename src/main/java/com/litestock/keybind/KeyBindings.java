@@ -1,83 +1,38 @@
 package com.litestock.keybind;
 
 import com.litestock.LiteStock;
-import com.litestock.command.LiteStockCommands;
 import com.litestock.config.LiteStockConfig;
 import com.litestock.scan.SelectionManager;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
 public class KeyBindings {
-    public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
-            Identifier.fromNamespaceAndPath(LiteStock.MOD_ID, "key.categories.litestock")
-    );
-
-    public static final KeyMapping SCAN_TOGGLE = new KeyMapping(
-            "key.litestock.scan_toggle",
-            InputConstants.KEY_H,
-            CATEGORY
-    );
-
-    public static final KeyMapping SELECT_AREA = new KeyMapping(
-            "key.litestock.select_area",
-            InputConstants.KEY_K,
-            CATEGORY
-    );
-
-    public static final KeyMapping CLEAR_SELECTION = new KeyMapping(
-            "key.litestock.clear_selection",
-            InputConstants.KEY_L,
-            CATEGORY
-    );
-
-    public static void init() {
-    }
-
-    public static void onClientTick() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
-
-        if (SCAN_TOGGLE.consumeClick()) {
-            LiteStockCommands.triggerScan();
+    public static boolean handleSelectArea(Minecraft mc, String keyDisplay) {
+        if (mc.level == null || mc.player == null) {
+            LiteStock.debugLog("Selection ignored: no active client level or player");
+            return false;
         }
 
-        if (SELECT_AREA.consumeClick()) {
-            handleSelectArea(mc);
-        }
-
-        if (CLEAR_SELECTION.consumeClick()) {
-            SelectionManager.getInstance().clear();
-            mc.player.sendSystemMessage(Component.literal("[LiteStock] 已清除选区").withStyle(ChatFormatting.GOLD));
-        }
-    }
-
-    private static void handleSelectArea(Minecraft mc) {
-        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.BLOCK) {
+        if (!(mc.hitResult instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) {
+            LiteStock.debugLog("Selection ignored: target={}", mc.hitResult == null ? "none" : mc.hitResult.getType());
             mc.player.sendSystemMessage(Component.literal("[LiteStock] 请对准一个方块").withStyle(ChatFormatting.RED));
-            return;
+            return false;
         }
 
-        BlockHitResult hit = (BlockHitResult) mc.hitResult;
         BlockPos pos = hit.getBlockPos();
-
-        if (mc.level == null) return;
-
         SelectionManager sel = SelectionManager.getInstance();
 
         if (!sel.hasPos1()) {
             sel.setPos1(pos.immutable());
+            LiteStock.debugLog("Selection first point set (pos={}, dimension={})", pos, mc.level.dimension().identifier());
             mc.player.sendSystemMessage(Component.literal(
                 "[LiteStock] 选区第一点: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()
             ).withStyle(ChatFormatting.GREEN).append(
-                Component.literal(" （移动准心到第二点再按 K）").withStyle(ChatFormatting.GRAY)
+                Component.literal(" （移动准心到第二点再按 " + keyDisplay + "）").withStyle(ChatFormatting.GRAY)
             ));
         } else {
             sel.setPos2(pos.immutable());
@@ -87,6 +42,7 @@ public class KeyBindings {
             ).withStyle(ChatFormatting.GREEN));
             sel.clear();
         }
+        return true;
     }
 
     private static int addSelectionContainers(Minecraft mc) {
@@ -97,6 +53,7 @@ public class KeyBindings {
         BlockPos max = sel.getMax();
         LiteStockConfig config = LiteStockConfig.get();
         int count = 0;
+        int unloadedChunks = 0;
 
         int minCX = min.getX() >> 4;
         int maxCX = max.getX() >> 4;
@@ -105,7 +62,10 @@ public class KeyBindings {
 
         for (int cx = minCX; cx <= maxCX; cx++) {
             for (int cz = minCZ; cz <= maxCZ; cz++) {
-                if (!mc.level.hasChunk(cx, cz)) continue;
+                if (!mc.level.hasChunk(cx, cz)) {
+                    unloadedChunks++;
+                    continue;
+                }
                 var chunk = mc.level.getChunk(cx, cz);
                 for (var be : chunk.getBlockEntities().values()) {
                     BlockPos bePos = be.getBlockPos();
@@ -122,6 +82,8 @@ public class KeyBindings {
             LiteStockConfig.save();
         }
 
+        LiteStock.debugLog("Selection complete (min={}, max={}, addedContainers={}, unloadedChunks={})",
+                min, max, count, unloadedChunks);
         return count;
     }
 }

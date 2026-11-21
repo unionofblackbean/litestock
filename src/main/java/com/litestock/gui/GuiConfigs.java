@@ -18,51 +18,70 @@ import fi.dy.masa.malilib.interfaces.IStringConsumer;
 import fi.dy.masa.malilib.util.StringUtils;
 
 public class GuiConfigs extends GuiConfigsBase {
+    private static final int LIST_X = 10;
+    private static final int TAB_Y = 26;
+    private static final int BUTTON_HEIGHT = 20;
+    private static final int PRESET_Y = TAB_Y + BUTTON_HEIGHT + 4;
+    private static final int SAVE_BUTTON_WIDTH = 120;
+    private static final int BUTTON_GAP = 10;
+
     private static ConfigGuiTab tab = ConfigGuiTab.GENERIC;
 
     public GuiConfigs() {
-        super(10, 50, LiteStock.MOD_ID, null, "litestock.gui.title.configs", LiteStock.MOD_VERSION);
+        super(LIST_X, listYForTab(), LiteStock.MOD_ID, null, "litestock.gui.title.configs", LiteStock.MOD_VERSION);
+    }
+
+    private static int listYForTab() {
+        return tab == ConfigGuiTab.GENERIC ? PRESET_Y + BUTTON_HEIGHT + 4 : PRESET_Y;
     }
 
     @Override
     public void initGui() {
+        int listY = listYForTab();
+        if (this.getListY() != listY) {
+            this.setListPosition(LIST_X, listY);
+            this.reCreateListWidget();
+        }
         super.initGui();
         this.clearOptions();
 
-        int x = 10;
-        int y = 26;
+        int x = LIST_X;
 
         for (ConfigGuiTab tab : ConfigGuiTab.values()) {
-            x += this.createButton(x, y, -1, tab);
+            x += this.createButton(x, TAB_Y, -1, tab);
         }
 
         if (tab == ConfigGuiTab.GENERIC) {
-            int presetX = 10;
-            int presetY = 50;
-            this.createPresetButton(presetX, presetY);
-            this.createSaveContainerButton(presetX + 210, presetY);
+            int presetWidth = Math.clamp(this.getBrowserWidth() - SAVE_BUTTON_WIDTH - BUTTON_GAP, 1, 200);
+            this.createPresetButton(LIST_X, PRESET_Y, presetWidth);
+            this.createSaveContainerButton(LIST_X + presetWidth + BUTTON_GAP, PRESET_Y);
         }
     }
 
-    private void createPresetButton(int x, int y) {
+    private void createPresetButton(int x, int y, int width) {
         String currentName = LiteStockConfig.get().currentPresetName;
         String label = "预设: " + currentName + " (点击切换)";
-        ButtonGeneric button = new ButtonGeneric(x, y, 200, 20, label);
+        ButtonGeneric button = new ButtonGeneric(x, y, width, BUTTON_HEIGHT, label);
         this.addButton(button, new PresetButtonListener(this));
     }
 
     private void createSaveContainerButton(int x, int y) {
         String label = "保存容器列表";
-        ButtonGeneric button = new ButtonGeneric(x, y, 120, 20, label);
+        ButtonGeneric button = new ButtonGeneric(x, y, SAVE_BUTTON_WIDTH, BUTTON_HEIGHT, label);
         this.addButton(button, new SaveContainerButtonListener(this));
     }
 
     private int createButton(int x, int y, int width, ConfigGuiTab tab) {
-        ButtonGeneric button = new ButtonGeneric(x, y, width, 20, tab.getDisplayName());
+        ButtonGeneric button = new ButtonGeneric(x, y, width, BUTTON_HEIGHT, tab.getDisplayName());
         button.setEnabled(GuiConfigs.tab != tab);
         this.addButton(button, new ButtonListener(tab, this));
 
         return button.getWidth() + 2;
+    }
+
+    @Override
+    protected int getBrowserHeight() {
+        return super.getBrowserHeight() - (this.getListY() - PRESET_Y);
     }
 
     @Override
@@ -99,8 +118,6 @@ public class GuiConfigs extends GuiConfigsBase {
         public void actionPerformedWithButton(ButtonBase button, int mouseButton) {
             GuiConfigs.tab = this.tab;
 
-            this.parent.reCreateListWidget();
-            this.parent.getListWidget().resetScrollbarPosition();
             this.parent.initGui();
         }
     }
