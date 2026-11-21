@@ -4,7 +4,7 @@ import com.litestock.command.LiteStockCommands;
 import com.litestock.config.Configs;
 import com.litestock.config.LiteStockConfig;
 import com.litestock.config.PresetConfig;
-import com.litestock.render.ChestHighlightRenderer;
+import com.litestock.render.WorldRenderHook;
 import com.litestock.scan.ContainerProbe;
 import com.litestock.scan.HudAutoScanner;
 import com.litestock.scan.InventoryTracker;
@@ -30,7 +30,7 @@ public class LiteStock implements ClientModInitializer {
 
         LiteStockCommands.init();
 
-        RenderEventHandler.getInstance().registerWorldLastRenderer(ChestHighlightRenderer.getInstance());
+        RenderEventHandler.getInstance().registerWorldLastRenderer(new WorldRenderHook());
 
         InitializationHandler.getInstance().registerInitializationHandler(new InitHandler());
 

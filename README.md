@@ -22,17 +22,21 @@ Litematica addon for logistics restocking. Automatically scans and highlights co
 
 ### Dependencies
 
-- Minecraft 26.1.2+
-- Fabric Loader 0.19.2+
-- Fabric API
-- [MaLiLib](https://github.com/maruohon/malilib)
-- [Litematica](https://github.com/maruohon/litematica)
+- Minecraft Java Edition 26.1, 26.1.1, 26.1.2, 26.2, or 26.3
+- Java 25 and Fabric Loader 0.19.3 or newer
+- [Fabric API](https://modrinth.com/mod/fabric-api), [Litematica](https://modrinth.com/mod/litematica), and [MaLiLib](https://modrinth.com/mod/malilib) for your Minecraft version
+
+| Minecraft | Fabric API tested | Litematica | MaLiLib |
+|---|---|---|---|
+| 26.1, 26.1.1, 26.1.2 | 0.155.3+26.1.2 | 0.27.14 | 0.28.12 |
+| 26.2 | 0.161.0+26.2 | 0.28.8 | 0.29.6 |
+| 26.3 | 0.166.2+26.3 | 0.29.1 | 0.30.2 |
 
 ### Installation
 
-1. Download the latest `.jar` file from the [Releases](https://github.com/unionofblackbean/litestock/releases) page
-2. Place the `.jar` file into your Minecraft `mods` folder
-3. Launch the game with the Fabric profile
+1. Choose the LiteStock JAR whose `mc` version matches your game exactly. For example, use `litestock-mc26.3-1.5.0.jar` with Minecraft 26.3. [Releases](https://github.com/unionofblackbean/litestock/releases)
+2. Place it and the matching dependencies in your Minecraft `mods` folder, replacing any previous LiteStock JAR.
+3. Launch the game with the Fabric profile.
 
 ### Hotkeys
 
@@ -69,10 +73,11 @@ Available options:
 ### Building
 
 ```bash
-./gradlew build
+./gradlew build                           # Minecraft 26.3
+./gradlew build -Pminecraft_version=26.1.1 # Select a different supported version
 ```
 
-Built jars will be in `build/libs/`.
+Build with JDK 25. Gradle downloads the dependencies and writes the JARs to `build/<minecraft-version>/libs/`. On Windows, use `gradlew.bat` and quote the version argument as `"-Pminecraft_version=26.1.1"`.
 
 ### License
 
@@ -98,17 +103,21 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 
 ### 依赖
 
-- Minecraft 26.1.2+
-- Fabric Loader 0.19.2+
-- Fabric API
-- [MaLiLib](https://github.com/maruohon/malilib)
-- [Litematica](https://github.com/maruohon/litematica)
+- Minecraft Java 版 26.1、26.1.1、26.1.2、26.2 或 26.3
+- Java 25 和 Fabric Loader 0.19.3 或更新版本
+- 对应游戏版本的 [Fabric API](https://modrinth.com/mod/fabric-api)、[Litematica](https://modrinth.com/mod/litematica) 和 [MaLiLib](https://modrinth.com/mod/malilib)
+
+| Minecraft | 已验证的 Fabric API | Litematica | MaLiLib |
+|---|---|---|---|
+| 26.1、26.1.1、26.1.2 | 0.155.3+26.1.2 | 0.27.14 | 0.28.12 |
+| 26.2 | 0.161.0+26.2 | 0.28.8 | 0.29.6 |
+| 26.3 | 0.166.2+26.3 | 0.29.1 | 0.30.2 |
 
 ### 安装
 
-1. 从 [Releases](https://github.com/unionofblackbean/litestock/releases) 页面下载最新的 `.jar` 文件
-2. 将 `.jar` 文件放入 Minecraft 的 `mods` 文件夹
-3. 使用 Fabric 配置启动游戏
+1. 选择文件名中的 `mc` 版本与游戏完全一致的 LiteStock JAR。例如 Minecraft 26.3 使用 `litestock-mc26.3-1.5.0.jar`。[发布页](https://github.com/unionofblackbean/litestock/releases)
+2. 将 LiteStock 和对应的依赖放入游戏的 `mods` 文件夹，替换旧的 LiteStock JAR。
+3. 使用 Fabric 配置启动游戏。
 
 ### 热键
 
@@ -145,10 +154,11 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 ### 构建
 
 ```bash
-./gradlew build
+./gradlew build                           # 构建 Minecraft 26.3 版
+./gradlew build -Pminecraft_version=26.1.1 # 构建指定的支持版本
 ```
 
-构建完成的 jar 文件位于 `build/libs/` 目录。
+构建需要 JDK 25。Gradle 会自动下载依赖，把 JAR 输出到 `build/<Minecraft 版本>/libs/`。Windows 下使用 `gradlew.bat`，并将版本参数写成 `"-Pminecraft_version=26.1.1"`。
 
 ### 备注
 

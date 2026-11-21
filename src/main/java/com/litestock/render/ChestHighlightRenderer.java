@@ -3,24 +3,20 @@ package com.litestock.render;
 import com.litestock.config.Configs;
 import com.litestock.config.LiteStockConfig;
 import com.litestock.scan.SelectionManager;
-import fi.dy.masa.malilib.interfaces.IRenderer;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import fi.dy.masa.malilib.util.data.Color4f;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderBuffers;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import org.joml.Matrix4fc;
 
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ChestHighlightRenderer implements IRenderer {
+public class ChestHighlightRenderer {
     private static final ChestHighlightRenderer INSTANCE = new ChestHighlightRenderer();
 
     private final List<BlockPos> highlightedChests = new CopyOnWriteArrayList<>();
@@ -80,28 +76,20 @@ public class ChestHighlightRenderer implements IRenderer {
         return totalCount;
     }
 
-    @Override
-    public void onRenderWorldLast(com.mojang.blaze3d.pipeline.RenderTarget renderTarget,
-                                  Matrix4fc poseStack,
-                                  net.minecraft.client.renderer.state.level.CameraRenderState camera,
-                                  net.minecraft.client.renderer.culling.Frustum frustum,
-                                  RenderBuffers renderBuffers,
-                                  com.mojang.blaze3d.buffers.GpuBufferSlice gpuBufferSlice,
-                                  org.joml.Vector4f vector4f,
-                                  ProfilerFiller profiler) {
-        LiteStockConfig config = LiteStockConfig.get();
+    boolean hasBoxesToRender() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return;
+        return mc.level != null && (!scanningContainers.isEmpty()
+                || (LiteStockConfig.get().highlightEnabled && !highlightedChests.isEmpty())
+                || (SelectionManager.getInstance().hasPos1()
+                    && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK));
+    }
 
-        profiler.push("litestock_render");
-
-        Vec3 camPos = camera.pos;
+    void renderBoxes(Vec3 camPos, VertexConsumer lineConsumer) {
+        Minecraft mc = Minecraft.getInstance();
+        LiteStockConfig config = LiteStockConfig.get();
         double cx = camPos.x;
         double cy = camPos.y;
         double cz = camPos.z;
-
-        MultiBufferSource.BufferSource bufferSource = renderBuffers.bufferSource();
-        VertexConsumer lineConsumer = bufferSource.getBuffer(RenderTypes.LINES);
 
         final float expand = 0.002f;
 
@@ -134,9 +122,9 @@ public class ChestHighlightRenderer implements IRenderer {
 
         // 选区框
         SelectionManager sel = SelectionManager.getInstance();
-        if (sel.hasPos1() && mc.hitResult != null && mc.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+        if (sel.hasPos1() && mc.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
             BlockPos p1 = sel.getPos1();
-            BlockPos p2 = ((net.minecraft.world.phys.BlockHitResult) mc.hitResult).getBlockPos();
+            BlockPos p2 = hit.getBlockPos();
 
             drawBox(lineConsumer,
                     Math.min(p1.getX(), p2.getX()) - cx, Math.min(p1.getY(), p2.getY()) - cy, Math.min(p1.getZ(), p2.getZ()) - cz,
@@ -153,9 +141,6 @@ public class ChestHighlightRenderer implements IRenderer {
                     p2.getX() + 1 - cx, p2.getY() + 1 - cy, p2.getZ() + 1 - cz,
                     255, 102, 102, 255, 4.0f);
         }
-
-        bufferSource.endBatch(RenderTypes.LINES);
-        profiler.pop();
     }
 
     private static void drawBox(VertexConsumer consumer,

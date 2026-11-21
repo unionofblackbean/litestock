@@ -3,6 +3,7 @@ package com.litestock.event;
 import com.litestock.LiteStock;
 import com.litestock.config.Hotkeys;
 import com.litestock.gui.GuiConfigs;
+import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import fi.dy.masa.malilib.hotkeys.IHotkeyCallback;
 import fi.dy.masa.malilib.hotkeys.IKeybind;
@@ -35,7 +36,7 @@ public class InputHandler implements IKeybindProvider, IKeyboardInputHandler, IM
         public boolean onKeyAction(KeyAction action, IKeybind key) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && action == KeyAction.PRESS) {
-                mc.setScreen(new GuiConfigs());
+                GuiBase.openGui(new GuiConfigs());
                 return true;
             }
             return false;

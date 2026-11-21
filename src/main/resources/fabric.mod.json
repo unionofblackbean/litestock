@@ -21,12 +21,12 @@
     "litestock.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.18.0",
-    "minecraft": ">=26.1",
+    "fabricloader": ">=${loader}",
+    "minecraft": "=${minecraft}",
     "java": ">=25",
     "fabric-api": "*",
-    "litematica": ">=0.27.0",
-    "malilib": ">=0.28.0"
+    "litematica": ">=${litematica}",
+    "malilib": ">=${malilib}"
   },
   "suggests": {
     "modmenu": "*"

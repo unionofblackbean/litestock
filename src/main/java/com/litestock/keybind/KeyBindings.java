@@ -4,6 +4,7 @@ import com.litestock.LiteStock;
 import com.litestock.command.LiteStockCommands;
 import com.litestock.config.LiteStockConfig;
 import com.litestock.scan.SelectionManager;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -13,7 +14,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import org.lwjgl.glfw.GLFW;
 
 public class KeyBindings {
     public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
@@ -22,19 +22,19 @@ public class KeyBindings {
 
     public static final KeyMapping SCAN_TOGGLE = new KeyMapping(
             "key.litestock.scan_toggle",
-            GLFW.GLFW_KEY_H,
+            InputConstants.KEY_H,
             CATEGORY
     );
 
     public static final KeyMapping SELECT_AREA = new KeyMapping(
             "key.litestock.select_area",
-            GLFW.GLFW_KEY_K,
+            InputConstants.KEY_K,
             CATEGORY
     );
 
     public static final KeyMapping CLEAR_SELECTION = new KeyMapping(
             "key.litestock.clear_selection",
-            GLFW.GLFW_KEY_L,
+            InputConstants.KEY_L,
             CATEGORY
     );
 
