@@ -34,7 +34,7 @@ Litematica addon for logistics restocking. Automatically scans and highlights co
 
 ### Installation
 
-1. Choose the LiteStock JAR whose `mc` version matches your game exactly. For example, use `litestock-mc26.3-1.5.0.jar` with Minecraft 26.3. [Releases](https://github.com/unionofblackbean/litestock/releases)
+1. Choose the LiteStock JAR whose `mc` version matches your game exactly. For example, use `litestock-mc26.3-1.5.1.jar` with Minecraft 26.3. [Releases](https://github.com/unionofblackbean/litestock/releases)
 2. Place it and the matching dependencies in your Minecraft `mods` folder, replacing any previous LiteStock JAR.
 3. Launch the game with the Fabric profile.
 
@@ -62,7 +62,7 @@ Litematica addon for logistics restocking. Automatically scans and highlights co
 
 ### Configuration
 
-Access the config GUI with `L + O`, or via Mod Menu.
+Open the LiteStock settings with `L + O`, or select **LiteStock** from the upper-right config switcher in a MaLiLib-based config screen such as Litematica's (`M + C`).
 
 Available options:
 - **HUD Auto-Scan**: Automatically scan containers when material list HUD is displayed (default: on)
@@ -115,7 +115,7 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 
 ### 安装
 
-1. 选择文件名中的 `mc` 版本与游戏完全一致的 LiteStock JAR。例如 Minecraft 26.3 使用 `litestock-mc26.3-1.5.0.jar`。[发布页](https://github.com/unionofblackbean/litestock/releases)
+1. 选择文件名中的 `mc` 版本与游戏完全一致的 LiteStock JAR。例如 Minecraft 26.3 使用 `litestock-mc26.3-1.5.1.jar`。[发布页](https://github.com/unionofblackbean/litestock/releases)
 2. 将 LiteStock 和对应的依赖放入游戏的 `mods` 文件夹，替换旧的 LiteStock JAR。
 3. 使用 Fabric 配置启动游戏。
 
@@ -143,7 +143,7 @@ Litematica 投影备货清单联动 mod。自动扫描并高亮显示包含投�
 
 ### 配置
 
-使用 `L + O` 打开配置界面，或通过 Mod Menu 打开。
+使用 `L + O` 打开 LiteStock 设置，也可以在 Litematica（`M + C`）等 MaLiLib 模组的配置页中，从右上角下拉菜单选择 **LiteStock**。
 
 可用选项：
 - **HUD 自动扫描**：显示材料清单 HUD 时自动扫描容器（默认：开启）
